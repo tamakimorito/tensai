@@ -1,22 +1,55 @@
+import { GAS_URL, HISTORY_PAGE_SIZE, PASSWORD_SHEET_URL, OPERATORS_SHEET_URL } from '../constants';
+import { HistoryEntry, HistoryFilters, GasErrorResponse, Template, Operator } from '../types';
 
-import { GAS_URL, HISTORY_PAGE_SIZE } from '../constants';
-import { HistoryEntry, HistoryFilters, GasErrorResponse } from '../types';
+// Helper to parse CSV text from Google Sheets
+const parseCsv = (text: string): string[][] => {
+  const lines = text.trim().split('\n');
+  return lines.map(line => {
+    // This is a simple CSV parser; it may not handle all edge cases (e.g., quotes in fields).
+    return line.slice(1, -1).split('","');
+  });
+};
 
 export const gasService = {
-  fetchTemplates: async (): Promise<string[]> => {
+  fetchPassword: async (): Promise<string> => {
     try {
-      // Using POST to bypass potential CORS issues with GET requests on Google Apps Script
-      const response = await fetch(`${GAS_URL}?action=templates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: '',
-      });
+      const response = await fetch(PASSWORD_SHEET_URL);
+      if (!response.ok) throw new Error('Network error fetching password.');
+      const text = await response.text();
+      // The response for a single cell is like `"password"\n`
+      const password = text.trim().slice(1, -1);
+      return password;
+    } catch (error) {
+      console.error('Failed to fetch password:', error);
+      throw new Error('パスワードの取得に失敗しました。');
+    }
+  },
+
+  fetchOperators: async (): Promise<Operator[]> => {
+    try {
+        const response = await fetch(OPERATORS_SHEET_URL);
+        if (!response.ok) throw new Error('Network error fetching operators.');
+        const text = await response.text();
+        const rows = parseCsv(text);
+        // Skip header row (first row) and filter out any empty rows
+        return rows.slice(1)
+            .filter(row => row[0] && row[0].trim() !== '')
+            .map(row => ({ name: row[0].trim() }));
+    } catch (error) {
+        console.error('Failed to fetch operators:', error);
+        throw new Error('担当者リストの取得に失敗しました。');
+    }
+  },
+
+  fetchTemplates: async (): Promise<Template[]> => {
+    try {
+      const response = await fetch(`${GAS_URL}?action=templates`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      if (data && Array.isArray(data.templates)) {
-        return data.templates;
+      if (data && data.api && Array.isArray(data.api.templates)) {
+        return data.api.templates;
       }
       return [];
     } catch (error) {
@@ -29,8 +62,6 @@ export const gasService = {
     try {
       const response = await fetch(`${GAS_URL}?action=send`, {
         method: 'POST',
-        // Using text/plain avoids a CORS preflight request.
-        // The GAS backend is expected to parse the stringified JSON from the post body.
         headers: {
             'Content-Type': 'text/plain;charset=utf-8',
         },
@@ -39,11 +70,14 @@ export const gasService = {
 
       if (!response.ok) {
         const errorData: GasErrorResponse = await response.json().catch(() => ({}));
-        if (errorData.api?.code === 'DUPLICATE_1MIN') {
+        if (errorData.code === 'DUPLICATE_1MIN') {
             throw new Error('同一宛先＋同一本文は1分以内に送信できません。');
         }
         if (errorData.api?.responseMessage) {
             throw new Error(errorData.api.responseMessage);
+        }
+        if (errorData.message) {
+            throw new Error(errorData.message);
         }
         throw new Error('送信に失敗しました。時間をおいて再度お試しください。');
       }
@@ -67,19 +101,14 @@ export const gasService = {
       if (filters.start) params.append('start', filters.start);
       if (filters.end) params.append('end', filters.end);
       
-      // Using POST to bypass potential CORS issues with GET requests on Google Apps Script
-      const response = await fetch(`${GAS_URL}?${params.toString()}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: '',
-      });
+      const response = await fetch(`${GAS_URL}?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      if (data && Array.isArray(data.history)) {
-        return data.history;
+      if (data && Array.isArray(data.data)) {
+        return data.data;
       }
       return [];
     } catch (error) {

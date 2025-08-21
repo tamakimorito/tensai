@@ -1,163 +1,195 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { SendFormData } from '../types';
+import { SendFormData, Template, Operator } from '../types';
 import { gasService } from '../services/gasService';
+import { cleanPhoneNumber } from '../utils/formatters';
 import Modal from '../components/Modal';
+import SearchableSelect from '../components/SearchableSelect';
+import PhonePreview from '../components/PhonePreview';
+import Toast from '../components/Toast';
+
+type ToastState = {
+  message: string;
+  type: 'success' | 'error';
+};
 
 const SendPage: React.FC = () => {
   const initialFormState: SendFormData = {
     operator: '',
     phoneNumber: '',
-    template: '',
     freeText: '',
   };
 
   const [formData, setFormData] = useState<SendFormData>(initialFormState);
-  const [templates, setTemplates] = useState<string[]>([]);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState<boolean>(true);
+  const [selectedTemplateValue, setSelectedTemplateValue] = useState('');
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [isLoading, setIsLoading] = useState({ templates: true, operators: true });
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
-  const [finalMessage, setFinalMessage] = useState<string>('');
+  const [toast, setToast] = useState<ToastState | null>(null);
 
   useEffect(() => {
-    const loadTemplates = async () => {
+    const loadInitialData = async () => {
       try {
-        const fetchedTemplates = await gasService.fetchTemplates();
+        const [fetchedTemplates, fetchedOperators] = await Promise.all([
+          gasService.fetchTemplates(),
+          gasService.fetchOperators()
+        ]);
         setTemplates(fetchedTemplates);
+        setOperators(fetchedOperators);
       } catch (error) {
         if (error instanceof Error) {
-            alert(error.message);
+            setToast({ message: error.message, type: 'error' });
         }
       } finally {
-        setIsLoadingTemplates(false);
+        setIsLoading({ templates: false, operators: false });
       }
     };
-    loadTemplates();
+    loadInitialData();
   }, []);
+  
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleOperatorChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, operator: value }));
+  };
+
+  const handleTemplateSelect = (value: string) => {
+    setSelectedTemplateValue(value);
+    setFormData((prev) => ({...prev, freeText: value}));
+  };
   
   const resetForm = useCallback(() => {
-    setFormData(initialFormState);
-  }, [initialFormState]);
+    setFormData(prev => ({
+      ...prev,
+      phoneNumber: '',
+      freeText: '',
+    }));
+    setSelectedTemplateValue('');
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.operator) {
-        alert('担当名を入力してください。');
+        showToast('担当名を選択してください。', 'error');
         return;
     }
-    if (!formData.phoneNumber) {
-        alert('送信先電話番号を入力してください。');
+    const phoneNumber = cleanPhoneNumber(formData.phoneNumber);
+    if (!phoneNumber) {
+        showToast('送信先電話番号を入力してください。', 'error');
         return;
     }
-    if (!formData.template && !formData.freeText) {
-        alert('定型文または自由文のいずれかを入力してください。');
+    if (!formData.freeText) {
+        showToast('メッセージ内容を入力してください。', 'error');
         return;
     }
     
-    let message = '';
-    const hasTemplate = formData.template.trim() !== '';
-    const hasFreeText = formData.freeText.trim() !== '';
-
-    if (hasTemplate && hasFreeText) {
-        message = `【定型文】\n${formData.template}\n\n【自由文】\n${formData.freeText}`;
-    } else if (hasTemplate) {
-        message = formData.template;
-    } else if (hasFreeText) {
-        message = formData.freeText;
-    }
-    setFinalMessage(message);
     setIsModalOpen(true);
   };
   
   const handleConfirmSend = async () => {
     setIsSending(true);
     try {
+        const cleanedPhoneNumber = cleanPhoneNumber(formData.phoneNumber);
         await gasService.sendMessage({
             operator: formData.operator,
-            phoneNumber: formData.phoneNumber,
-            message: finalMessage,
+            phoneNumber: cleanedPhoneNumber,
+            message: formData.freeText,
         });
-        alert('送信成功しました');
+        showToast('送信成功しました', 'success');
         setIsModalOpen(false);
         resetForm();
     } catch (error) {
         if (error instanceof Error) {
-            alert(error.message);
+            showToast(error.message, 'error');
         } else {
-            alert('送信に失敗しました。時間をおいて再度お試しください。');
+            showToast('送信に失敗しました。時間をおいて再度お試しください。', 'error');
         }
     } finally {
         setIsSending(false);
     }
   };
 
+  const templateOptions = templates.map(t => ({ value: t.default_content, label: t.title }));
+  const operatorOptions = operators.map(o => ({ value: o.name, label: o.name }));
+
   return (
-    <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">SMS送信</h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="operator" className="block text-sm font-medium text-gray-700 mb-1">担当名</label>
-          <input
-            type="text"
-            id="operator"
-            name="operator"
-            value={formData.operator}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-gray-500 focus:border-gray-500 transition duration-150 ease-in-out"
-            required
-          />
+    <>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      <h1 className="text-2xl font-bold text-slate-700 mb-6">個別送信</h1>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl">
+        {/* Left Column: Form */}
+        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="operator" className="block text-sm font-medium text-slate-600 mb-1">担当名</label>
+              <SearchableSelect
+                options={operatorOptions}
+                value={formData.operator}
+                onChange={handleOperatorChange}
+                placeholder={isLoading.operators ? '読み込み中...' : '担当者を検索または選択'}
+              />
+            </div>
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-600 mb-1">送信先電話番号</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out"
+                required
+                autoComplete="off"
+              />
+              <p className="text-xs text-slate-500 mt-1">国内形式（090...）または国際形式（+8180...）で入力</p>
+            </div>
+            <div>
+              <label htmlFor="template" className="block text-sm font-medium text-slate-600 mb-1">定型文</label>
+              <SearchableSelect
+                options={templateOptions}
+                value={selectedTemplateValue}
+                onChange={handleTemplateSelect}
+                placeholder={isLoading.templates ? '読み込み中...' : '定型文を検索または選択して挿入'}
+              />
+            </div>
+            <div>
+              <label htmlFor="freeText" className="block text-sm font-medium text-slate-600 mb-1">自由文</label>
+              <textarea
+                id="freeText"
+                name="freeText"
+                value={formData.freeText}
+                onChange={handleChange}
+                rows={5}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out"
+                placeholder="定型文を選択するか、ここに直接メッセージを入力"
+              />
+            </div>
+            <div>
+              <button
+                type="submit"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-200 ease-in-out"
+              >
+                送信内容を確認
+              </button>
+            </div>
+          </form>
         </div>
-        <div>
-          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">送信先電話番号</label>
-          <input
-            type="tel"
-            id="phoneNumber"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-gray-500 focus:border-gray-500 transition duration-150 ease-in-out"
-            required
-          />
-          <p className="text-xs text-gray-500 mt-1">国内形式（090...）または国際形式（+8180...）で入力</p>
+        
+        {/* Right Column: Preview */}
+        <div className="hidden lg:flex items-center justify-center">
+            <PhonePreview phoneNumber={formData.phoneNumber} message={formData.freeText} />
         </div>
-        <div>
-          <label htmlFor="template" className="block text-sm font-medium text-gray-700 mb-1">定型文</label>
-          <select
-            id="template"
-            name="template"
-            value={formData.template}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-gray-500 focus:border-gray-500 transition duration-150 ease-in-out bg-white"
-          >
-            <option value="">{isLoadingTemplates ? '読み込み中...' : '選択してください'}</option>
-            {templates.map((t, index) => <option key={index} value={t}>{t}</option>)}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="freeText" className="block text-sm font-medium text-gray-700 mb-1">自由文</label>
-          <textarea
-            id="freeText"
-            name="freeText"
-            value={formData.freeText}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-gray-500 focus:border-gray-500 transition duration-150 ease-in-out"
-          />
-        </div>
-        <div>
-          <button
-            type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-600 transition duration-150 ease-in-out"
-          >
-            送信
-          </button>
-        </div>
-      </form>
+
+      </div>
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -167,20 +199,20 @@ const SendPage: React.FC = () => {
       >
         <div className="space-y-4">
             <div>
-                <p className="font-semibold text-gray-600">担当名:</p>
-                <p className="text-gray-800">{formData.operator}</p>
+                <p className="font-semibold text-slate-500">担当名:</p>
+                <p className="text-slate-800 font-medium">{formData.operator}</p>
             </div>
             <div>
-                <p className="font-semibold text-gray-600">送信先電話番号:</p>
-                <p className="text-gray-800">{formData.phoneNumber}</p>
+                <p className="font-semibold text-slate-500">送信先電話番号:</p>
+                <p className="text-slate-800 font-medium">{cleanPhoneNumber(formData.phoneNumber)}</p>
             </div>
             <div>
-                <p className="font-semibold text-gray-600">送信内容プレビュー:</p>
-                <p className="text-gray-800 whitespace-pre-wrap bg-gray-100 p-3 rounded-md">{finalMessage}</p>
+                <p className="font-semibold text-slate-500">送信内容プレビュー:</p>
+                <p className="text-slate-800 whitespace-pre-wrap bg-slate-100 p-3 rounded-md border border-slate-200">{formData.freeText}</p>
             </div>
         </div>
       </Modal>
-    </div>
+    </>
   );
 };
 

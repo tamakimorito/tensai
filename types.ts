@@ -1,9 +1,16 @@
-
 export interface SendFormData {
   operator: string;
   phoneNumber: string;
-  template: string;
   freeText: string;
+}
+
+export interface Template {
+  title: string;
+  default_content: string;
+}
+
+export interface Operator {
+  name: string;
 }
 
 export interface HistoryEntry {
@@ -27,4 +34,6 @@ export interface GasErrorResponse {
     responseMessage?: string;
     code?: string;
   }
+  code?: string;
+  message?: string;
 }
