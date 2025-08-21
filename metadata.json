@@ -1,0 +1,5 @@
+{
+  "name": "天才リーチ！",
+  "description": "SMSをGoogle Apps Script経由で送信するためのウェブアプリケーションです。",
+  "requestFramePermissions": []
+}
