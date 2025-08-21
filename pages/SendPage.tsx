@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SendFormData, Template, Operator } from '../types';
 import { gasService } from '../services/gasService';
 import { cleanPhoneNumber } from '../utils/formatters';
@@ -27,6 +27,9 @@ const SendPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [sendingStatus, setSendingStatus] = useState<'idle' | 'success' | 'fail'>('idle');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -55,6 +58,9 @@ const SendPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    if (name === 'phoneNumber') {
+        setPhoneError(null);
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -69,7 +75,7 @@ const SendPage: React.FC = () => {
   
   const resetForm = useCallback(() => {
     setFormData(prev => ({
-      ...prev,
+      operator: prev.operator, // Keep operator name
       phoneNumber: '',
       freeText: '',
     }));
@@ -97,6 +103,7 @@ const SendPage: React.FC = () => {
   
   const handleConfirmSend = async () => {
     setIsSending(true);
+    setPhoneError(null); // Reset phone error on new attempt
     try {
         const cleanedPhoneNumber = cleanPhoneNumber(formData.phoneNumber);
         await gasService.sendMessage({
@@ -104,15 +111,38 @@ const SendPage: React.FC = () => {
             phoneNumber: cleanedPhoneNumber,
             message: formData.freeText,
         });
-        showToast('送信成功しました', 'success');
+        
         setIsModalOpen(false);
-        resetForm();
+        showToast('送信成功しました', 'success');
+        setSendingStatus('success');
+        
+        // Delay form reset to allow animation to play with content
+        setTimeout(() => {
+            resetForm();
+            setSendingStatus('idle');
+        }, 1800);
+
     } catch (error) {
-        if (error instanceof Error) {
-            showToast(error.message, 'error');
-        } else {
-            showToast('送信に失敗しました。時間をおいて再度お試しください。', 'error');
+        setIsModalOpen(false); // Close modal on failure
+        setSendingStatus('fail');
+        
+        const rawErrorMessage = error instanceof Error ? error.message : '送信に失敗しました。時間をおいて再度お試しください。';
+        let displayErrorMessage = rawErrorMessage;
+
+        // Translate specific known error messages
+        if (rawErrorMessage.toLowerCase().includes('invalid phonenumber')) {
+            displayErrorMessage = '電話番号の形式が正しくありません。';
         }
+        
+        showToast(displayErrorMessage, 'error');
+        
+        // If the error is about the phone number, highlight the field
+        if (rawErrorMessage.toLowerCase().includes('phone')) {
+            setPhoneError(displayErrorMessage);
+            phoneInputRef.current?.focus();
+        }
+
+        setTimeout(() => setSendingStatus('idle'), 1800);
     } finally {
         setIsSending(false);
     }
@@ -141,15 +171,19 @@ const SendPage: React.FC = () => {
             <div>
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-600 mb-1">送信先電話番号</label>
               <input
+                ref={phoneInputRef}
                 type="tel"
                 id="phoneNumber"
                 name="phoneNumber"
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out"
+                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out ${phoneError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-slate-300'}`}
                 required
                 autoComplete="off"
+                aria-invalid={!!phoneError}
+                aria-describedby={phoneError ? "phone-error" : undefined}
               />
+              {phoneError && <p id="phone-error" className="text-sm text-red-600 mt-1">{phoneError}</p>}
               <p className="text-xs text-slate-500 mt-1">国内形式（090...）または国際形式（+8180...）で入力</p>
             </div>
             <div>
@@ -186,7 +220,7 @@ const SendPage: React.FC = () => {
         
         {/* Right Column: Preview */}
         <div className="hidden lg:flex items-center justify-center">
-            <PhonePreview phoneNumber={formData.phoneNumber} message={formData.freeText} />
+            <PhonePreview phoneNumber={formData.phoneNumber} message={formData.freeText} status={sendingStatus} />
         </div>
 
       </div>

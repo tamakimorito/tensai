@@ -3,9 +3,21 @@ import React from 'react';
 interface PhonePreviewProps {
   phoneNumber: string;
   message: string;
+  status?: 'idle' | 'success' | 'fail';
 }
 
-const PhonePreview: React.FC<PhonePreviewProps> = ({ phoneNumber, message }) => {
+const PhonePreview: React.FC<PhonePreviewProps> = ({ phoneNumber, message, status = 'idle' }) => {
+  const getAnimationClass = () => {
+    switch (status) {
+      case 'success':
+        return 'animate-send-success';
+      case 'fail':
+        return 'animate-send-fail';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="w-80 h-[580px] bg-white border-8 border-slate-800 rounded-4xl shadow-2xl overflow-hidden flex flex-col">
       {/* Notch */}
@@ -19,8 +31,8 @@ const PhonePreview: React.FC<PhonePreviewProps> = ({ phoneNumber, message }) => 
       </div>
 
       {/* Message Area */}
-      <div className="flex-grow p-4 flex flex-col justify-end bg-slate-100/50">
-        <div className="flex justify-end mb-2">
+      <div className="flex-grow p-4 flex flex-col justify-end bg-slate-100/50 overflow-hidden">
+        <div className={`flex justify-end mb-2 ${getAnimationClass()}`}>
             <div className="bg-cyan-500 text-white rounded-2xl rounded-br-lg p-3 max-w-xs break-words">
                 <p>{message || 'メッセージがここに表示されます...'}</p>
             </div>

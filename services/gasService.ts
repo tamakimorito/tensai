@@ -68,19 +68,29 @@ export const gasService = {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData: GasErrorResponse = await response.json().catch(() => ({}));
-        if (errorData.code === 'DUPLICATE_1MIN') {
-            throw new Error('同一宛先＋同一本文は1分以内に送信できません。');
-        }
-        if (errorData.api?.responseMessage) {
-            throw new Error(errorData.api.responseMessage);
-        }
-        if (errorData.message) {
-            throw new Error(errorData.message);
-        }
-        throw new Error('送信に失敗しました。時間をおいて再度お試しください。');
+      // GAS Web Apps often return a 200 OK status even for application-level errors.
+      // Therefore, we must inspect the JSON body to determine the true outcome.
+      const responseData = await response.json().catch(() => {
+          // If JSON parsing fails, it's likely a server-side issue or network problem.
+          throw new Error(`サーバーからの応答が不正です。ステータス: ${response.status}`);
+      });
+
+      // The provided GAS script uses an `ok: false` property in the JSON body to signal errors.
+      if (responseData.ok === false) {
+          // Extract the most specific error message available.
+          const apiMessage = responseData.api?.responseMessage;
+          const gasMessage = responseData.message;
+
+          // The GAS script handles duplicate submissions with a specific code and message.
+          if (responseData.code === 'DUPLICATE_1MIN') {
+              throw new Error(gasMessage || '同一宛先＋同一本文は1分以内に送信できません。');
+          }
+          
+          // Prioritize the message from the underlying SMS API, then the GAS message.
+          const errorMessage = apiMessage || gasMessage || '送信に失敗しました。';
+          throw new Error(errorMessage);
       }
+
     } catch (error) {
       if (error instanceof Error) {
         throw error;
