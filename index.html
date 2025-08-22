@@ -12,6 +12,13 @@
   <style>
     body {
       font-family: 'IBM Plex Sans JP', sans-serif;
+      transition: background-color 0.3s ease-in-out;
+    }
+    body.normal-mode {
+      background-color: #f1f5f9; /* bg-slate-100 */
+    }
+    body.mmk-mode {
+      background-color: #E0F2FE; /* sky-100 */
     }
     @keyframes fade-in-up {
         0% {
@@ -61,7 +68,7 @@
 }
 </script>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body class="text-slate-800">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

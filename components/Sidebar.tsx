@@ -1,13 +1,21 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar: React.FC = () => {
+  const { logout } = useAuth();
   const commonLinkClasses = "flex items-center px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 rounded-md";
   const activeLinkClasses = "bg-slate-700 text-white";
 
   const LightbulbIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="#FBC02D">
       <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17h8v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+    </svg>
+  );
+
+  const LogoutIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
     </svg>
   );
 
@@ -39,8 +47,15 @@ const Sidebar: React.FC = () => {
           </li>
         </ul>
       </nav>
-      <div className="p-4 border-t border-slate-700 text-center text-xs text-slate-500">
-        <p>© タマシステム2025</p>
+      <div className="p-4 border-t border-slate-700 space-y-4">
+          <button
+            onClick={logout}
+            className="w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 rounded-md"
+          >
+            <LogoutIcon />
+            <span className="ml-3">ログアウト</span>
+          </button>
+        <p className="text-center text-xs text-slate-500">© タマシステム2025</p>
       </div>
     </aside>
   );

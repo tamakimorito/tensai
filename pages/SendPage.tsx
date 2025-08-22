@@ -6,6 +6,7 @@ import Modal from '../components/Modal';
 import SearchableSelect from '../components/SearchableSelect';
 import PhonePreview from '../components/PhonePreview';
 import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
 
 type ToastState = {
   message: string;
@@ -13,6 +14,8 @@ type ToastState = {
 };
 
 const SendPage: React.FC = () => {
+  const { mode } = useAuth();
+
   const initialFormState: SendFormData = {
     operator: '',
     phoneNumber: '',
@@ -31,15 +34,34 @@ const SendPage: React.FC = () => {
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
 
+  const mmkTemplates: Template[] = [
+    {
+      title: '天然水決済',
+      default_content: `■プレミアムウォーターマイページ■\nhttps://premium-water.net/mypage/\n\nログインＩＤ：a{phoneNumber}\nパスワード：{phoneNumber}a`
+    },
+    {
+      title: '浄水型決済',
+      default_content: `■LOCCAマイページ■\nhttps://locca.premium-water.net/mypage/\n\nログインＩＤ：a{phoneNumber}\nパスワード：{phoneNumber}a`
+    },
+    {
+      title: '決済後追い',
+      default_content: `お世話になっております。（株）すまえるです。\n本日はお忙しい中ウォーターサーバーの件ご対応頂き誠に有難う御座いました。\n\n※お客様へお知らせ\nお支払い方法のご登録がまだお済でないようですのでお手数ですが、21：00までにお支払方法のご登録をお忘れないようにお願い致します。\n\nご不明点等御座いましたらお気軽にお問合せ下さい。\n今後とも何卒宜しくお願い致します。\n\n（株）すまえる：050-5785-7954`
+    },
+  ];
+
   useEffect(() => {
     const loadInitialData = async () => {
+      setIsLoading({ templates: true, operators: true });
       try {
-        const [fetchedTemplates, fetchedOperators] = await Promise.all([
-          gasService.fetchTemplates(),
-          gasService.fetchOperators()
-        ]);
-        setTemplates(fetchedTemplates);
+        const fetchedOperators = await gasService.fetchOperators();
         setOperators(fetchedOperators);
+
+        if (mode === 'mmk') {
+          setTemplates(mmkTemplates);
+        } else {
+          const fetchedTemplates = await gasService.fetchTemplates();
+          setTemplates(fetchedTemplates);
+        }
       } catch (error) {
         if (error instanceof Error) {
             setToast({ message: error.message, type: 'error' });
@@ -49,8 +71,21 @@ const SendPage: React.FC = () => {
       }
     };
     loadInitialData();
-  }, []);
+  }, [mode]);
   
+  // Update message content when phone number changes if a relevant template is selected
+  useEffect(() => {
+    if (mode === 'mmk' && selectedTemplateValue) {
+        const selectedTemplate = templates.find(t => t.default_content === selectedTemplateValue);
+        if (selectedTemplate && (selectedTemplate.title === '天然水決済' || selectedTemplate.title === '浄水型決済')) {
+            const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
+            const newContent = selectedTemplateValue.replace(/{phoneNumber}/g, cleanedPhone);
+            setFormData(prev => ({ ...prev, freeText: newContent }));
+        }
+    }
+  }, [formData.phoneNumber, selectedTemplateValue, mode, templates]);
+
+
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
   };
@@ -69,8 +104,15 @@ const SendPage: React.FC = () => {
   };
 
   const handleTemplateSelect = (value: string) => {
-    setSelectedTemplateValue(value);
-    setFormData((prev) => ({...prev, freeText: value}));
+    setSelectedTemplateValue(value); // Store original template content
+    let content = value;
+    const selectedTemplate = templates.find(t => t.default_content === value);
+
+    if (mode === 'mmk' && selectedTemplate && (selectedTemplate.title === '天然水決済' || selectedTemplate.title === '浄水型決済')) {
+        const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
+        content = value.replace(/{phoneNumber}/g, cleanedPhone);
+    }
+    setFormData((prev) => ({...prev, freeText: content}));
   };
   
   const resetForm = useCallback(() => {
@@ -154,7 +196,9 @@ const SendPage: React.FC = () => {
   return (
     <>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <h1 className="text-2xl font-bold text-slate-700 mb-6">個別送信</h1>
+      <h1 className="text-2xl font-bold text-slate-700 mb-6">
+        {mode === 'mmk' ? 'MMKモード' : '個別送信'}
+      </h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl">
         {/* Left Column: Form */}
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">

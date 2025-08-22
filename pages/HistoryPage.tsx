@@ -4,8 +4,10 @@ import { gasService } from '../services/gasService';
 import { formatPhoneNumberForDisplay } from '../utils/formatters';
 import { HISTORY_PAGE_SIZE } from '../constants';
 import SkeletonLoader from '../components/SkeletonLoader';
+import { useAuth } from '../context/AuthContext';
 
 const HistoryPage: React.FC = () => {
+  const { mode } = useAuth();
   const initialFilters: HistoryFilters = {
     operator: '',
     phoneNumber: '',
@@ -52,7 +54,9 @@ const HistoryPage: React.FC = () => {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-700 mb-6">送信履歴</h1>
+      <h1 className="text-2xl font-bold text-slate-700 mb-6">
+        {mode === 'mmk' ? 'MMKモード - 送信履歴' : '送信履歴'}
+      </h1>
       <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
         
         {/* Filters */}
