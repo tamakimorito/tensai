@@ -40,7 +40,7 @@ const SendPage: React.FC = () => {
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'success' | 'fail'>('idle');
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
-  const [selectedSumaeruNumber, setSelectedSumaeruNumber] = useState<string>(sumaeruNumbers[0].value);
+  const [selectedSumaeruNumber, setSelectedSumaeruNumber] = useState<string>('');
   const [showSumaeruRadioButtons, setShowSumaeruRadioButtons] = useState<boolean>(false);
 
 
@@ -137,7 +137,7 @@ const SendPage: React.FC = () => {
         const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
         const newContent = selectedTemplateValue
           .replace(/{phoneNumber}/g, cleanedPhone)
-          .replace(/{sumaeruNumber}/g, selectedSumaeruNumber);
+          .replace(/{sumaeruNumber}/g, selectedSumaeruNumber || '{sumaeruNumber}');
         setFormData(prev => ({ ...prev, freeText: newContent }));
     }
   }, [formData.phoneNumber, selectedTemplateValue, selectedSumaeruNumber]);
@@ -163,7 +163,11 @@ const SendPage: React.FC = () => {
   const handleTemplateSelect = (value: string) => {
     setSelectedTemplateValue(value);
     if (mode === 'mmk') {
-      setShowSumaeruRadioButtons(value.includes('{sumaeruNumber}'));
+      const needsSumaeruNumber = value.includes('{sumaeruNumber}');
+      setShowSumaeruRadioButtons(needsSumaeruNumber);
+      if (!needsSumaeruNumber) {
+        setSelectedSumaeruNumber('');
+      }
     }
   };
   
@@ -180,6 +184,7 @@ const SendPage: React.FC = () => {
     }));
     setSelectedTemplateValue('');
     setShowSumaeruRadioButtons(false);
+    setSelectedSumaeruNumber('');
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -191,6 +196,10 @@ const SendPage: React.FC = () => {
     const phoneNumber = cleanPhoneNumber(formData.phoneNumber);
     if (!phoneNumber) {
         showToast('送信先電話番号を入力してください。', 'error');
+        return;
+    }
+    if (mode === 'mmk' && showSumaeruRadioButtons && !selectedSumaeruNumber) {
+        showToast('株式会社すまえるの電話番号を選択してください。', 'error');
         return;
     }
     if (!formData.freeText) {
@@ -271,6 +280,35 @@ const SendPage: React.FC = () => {
               />
             </div>
 
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-600 mb-1">送信先電話番号</label>
+              <input
+                ref={phoneInputRef}
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out ${phoneError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-slate-300'}`}
+                required
+                autoComplete="off"
+                aria-invalid={!!phoneError}
+                aria-describedby={phoneError ? "phone-error" : undefined}
+              />
+              {phoneError && <p id="phone-error" className="text-sm text-red-600 mt-1">{phoneError}</p>}
+              <p className="text-xs text-slate-500 mt-1">国内形式（090...）または国際形式（+8180...）で入力</p>
+            </div>
+            
+            <div>
+              <label htmlFor="template" className="block text-sm font-medium text-slate-600 mb-1">定型文</label>
+              <SearchableSelect
+                options={templateOptions}
+                value={selectedTemplateValue}
+                onChange={handleTemplateSelect}
+                placeholder={isLoading.templates ? '読み込み中...' : '定型文を検索または選択して挿入'}
+              />
+            </div>
+            
             {mode === 'mmk' && showSumaeruRadioButtons && (
               <div className="animate-fade-in-up">
                 <label className="block text-sm font-medium text-slate-600 mb-2">株式会社すまえる 電話番号</label>
@@ -292,33 +330,6 @@ const SendPage: React.FC = () => {
               </div>
             )}
 
-            <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-600 mb-1">送信先電話番号</label>
-              <input
-                ref={phoneInputRef}
-                type="tel"
-                id="phoneNumber"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out ${phoneError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-slate-300'}`}
-                required
-                autoComplete="off"
-                aria-invalid={!!phoneError}
-                aria-describedby={phoneError ? "phone-error" : undefined}
-              />
-              {phoneError && <p id="phone-error" className="text-sm text-red-600 mt-1">{phoneError}</p>}
-              <p className="text-xs text-slate-500 mt-1">国内形式（090...）または国際形式（+8180...）で入力</p>
-            </div>
-            <div>
-              <label htmlFor="template" className="block text-sm font-medium text-slate-600 mb-1">定型文</label>
-              <SearchableSelect
-                options={templateOptions}
-                value={selectedTemplateValue}
-                onChange={handleTemplateSelect}
-                placeholder={isLoading.templates ? '読み込み中...' : '定型文を検索または選択して挿入'}
-              />
-            </div>
             <div>
               <label htmlFor="freeText" className="block text-sm font-medium text-slate-600 mb-1">自由文</label>
               <textarea
