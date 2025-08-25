@@ -13,6 +13,13 @@ type ToastState = {
   type: 'success' | 'error';
 };
 
+const sumaeruNumbers = [
+  { label: 'ストエネ販路', value: '050-5785-7954' },
+  { label: 'イタンジ', value: '050-5785-7963' },
+  { label: 'スマサポ すま直 ベンダー', value: '050-5785-7964' },
+  { label: 'NNE', value: '050-5785-8000' },
+];
+
 const SendPage: React.FC = () => {
   const { mode } = useAuth();
 
@@ -33,6 +40,9 @@ const SendPage: React.FC = () => {
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'success' | 'fail'>('idle');
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
+  const [selectedSumaeruNumber, setSelectedSumaeruNumber] = useState<string>(sumaeruNumbers[0].value);
+  const [showSumaeruRadioButtons, setShowSumaeruRadioButtons] = useState<boolean>(false);
+
 
   const mmkTemplates: Template[] = [
     {
@@ -45,7 +55,55 @@ const SendPage: React.FC = () => {
     },
     {
       title: '決済後追い',
-      default_content: `お世話になっております。（株）すまえるです。\n本日はお忙しい中ウォーターサーバーの件ご対応頂き誠に有難う御座いました。\n\n※お客様へお知らせ\nお支払い方法のご登録がまだお済でないようですのでお手数ですが、21：00までにお支払方法のご登録をお忘れないようにお願い致します。\n\nご不明点等御座いましたらお気軽にお問合せ下さい。\n今後とも何卒宜しくお願い致します。\n\n（株）すまえる：050-5785-7954`
+      default_content: `お世話になっております。（株）すまえるです。\n本日はお忙しい中ウォーターサーバーの件ご対応頂き誠に有難う御座いました。\n\n※お客様へお知らせ\nお支払い方法のご登録がまだお済でないようですのでお手数ですが、21：00までにお支払方法のご登録をお忘れないようにお願い致します。\n\nご不明点等御座いましたらお気軽にお問合せ下さい。\n今後とも何卒宜しくお願い致します。\n\n（株）すまえる：{sumaeruNumber}`
+    },
+    {
+      title: 'WTS詳細まとめ(famfit2 レンタル)ver',
+      default_content: `https://premium-water.net/pw/tel/39/famfit2/famfit2_a4_250430.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\nhttp://s.premium-water.net/LV_GQ3\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'WTS詳細まとめ(アマダナスタンダード 5年プラン)ver',
+      default_content: `https://premium-water.net/pw/tel/39/general/amadanaSTD_1698.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\nhttp://s.premium-water.net/V9vr8w\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'WTS詳細まとめ(アマダナスタンダード 3年プラン)ver',
+      default_content: `http://s.premium-water.net/wo3wdz\n\nhttps://premium-water.net/pw/tel/39/general/amadanaSTD_1698.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'WTS詳細まとめ(スリムサーバーⅣ 5年プラン)ver',
+      default_content: `http://s.premium-water.net/V9vr8w\n\nhttps://premium-water.net/pw/tel/39/slim4/slim4_a4.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'WTS詳細まとめ(スリムサーバーⅣ 3年プラン)ver',
+      default_content: `https://premium-water.net/pw/tel/39/slim4/slim4_a4.pdf\n\nhttp://s.premium-water.net/wo3wdz\n\nhttps://premium-water.net/feature/category/user-interview/\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'famfit2 割賦 概要',
+      default_content: `https://premium-water.net/pw/tel/39/famfit2/famfit2_a4_250430.pdf\n\nhttps://premium-water.net/pw/tel/39/famfit/famfit_agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'AURAサーバー 前確後詳細',
+      default_content: `※送信専用\n\nhttp://s.premium-water.net/vU_mJ2\nhttps://premium-water.net/pw/tel/39/motto/agreement_hg_2.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'MOMクラブ 概要',
+      default_content: `http://s.premium-water.net/fL1tYm\n\nhttps://premium-water.net/feature/category/user-interview/\n\nhttps://premium-water.net/pw/tel/39/mom/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'リッタ詳細',
+      default_content: `※送信専用\nhttps://locca.premium-water.net/prm/tel/litta_leaf_a4.pdf\n\nhttps://locca.premium-water.net/prm/tel/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\nご不明点があればお気軽にお問い合わせください\n◆LOCCAお客様専用窓口◆\nフリーダイヤル：0570-026-363\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'Locca Smart 前確後詳細LS',
+      default_content: `※送信専用\n\nhttp://s.premium-water.net/8enBDL\nhttps://locca.premium-water.net/prm/tel/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口\n携帯電話の方は：0570-026-363\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'スリムR2 概要',
+      default_content: `https://locca.premium-water.net/prm/tel/39/slim-r2_leaf_a4.pdf\n\nhttps://locca.premium-water.net/prm/tel/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\n携帯電話の方：0570-026-363\n受付時間 10:00〜18:00 ※年末年始を除く`
+    },
+    {
+      title: 'クレカ後追い キャリア→クレカ',
+      default_content: `【送信専用】プレミアムウォーターお申し込みのお客様へ\n株式会社すまえるです。\n先日はプレミアムウォーターのお申し込みをいただき、誠にありがとうございます。\n\nプレミアムウォーターのマイページでは、\n\n・お水の本数やお届け日の調整\n・ご契約者さま限定のキャンペーンやお得な情報\n\nなどがご利用いただけますので、この機会にぜひご活用ください。\n\n【重要】\n現在「携帯合算払い」でお手続きをいただいておりますが、継続してサービスをご利用いただくため、「クレジットカード払い」へのご変更をおすすめしております。\n※今後、携帯会社のプラン変更や名義変更などによりご利用が一時停止となる場合がございます。\n\nお手続きはマイページから簡単に行えます。お早めのご対応をよろしくお願いいたします。\n\n▼マイページはこちら\n■プレミアムウォーターマイページ■\nhttps://premium-water.net/mypage/\n\nログインＩＤ：a{phoneNumber}\nパスワード：{phoneNumber}a\n\nご不明点はこちらまで株式会社すまえる：{sumaeruNumber}まで`
     },
   ];
 
@@ -73,17 +131,16 @@ const SendPage: React.FC = () => {
     loadInitialData();
   }, [mode]);
   
-  // Update message content when phone number changes if a relevant template is selected
+  // Update message content when phone number, template, or sumaeru number changes
   useEffect(() => {
-    if (mode === 'mmk' && selectedTemplateValue) {
-        const selectedTemplate = templates.find(t => t.default_content === selectedTemplateValue);
-        if (selectedTemplate && (selectedTemplate.title === '天然水決済' || selectedTemplate.title === '浄水型決済')) {
-            const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
-            const newContent = selectedTemplateValue.replace(/{phoneNumber}/g, cleanedPhone);
-            setFormData(prev => ({ ...prev, freeText: newContent }));
-        }
+    if (selectedTemplateValue) {
+        const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
+        const newContent = selectedTemplateValue
+          .replace(/{phoneNumber}/g, cleanedPhone)
+          .replace(/{sumaeruNumber}/g, selectedSumaeruNumber);
+        setFormData(prev => ({ ...prev, freeText: newContent }));
     }
-  }, [formData.phoneNumber, selectedTemplateValue, mode, templates]);
+  }, [formData.phoneNumber, selectedTemplateValue, selectedSumaeruNumber]);
 
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -104,17 +161,17 @@ const SendPage: React.FC = () => {
   };
 
   const handleTemplateSelect = (value: string) => {
-    setSelectedTemplateValue(value); // Store original template content
-    let content = value;
-    const selectedTemplate = templates.find(t => t.default_content === value);
-
-    if (mode === 'mmk' && selectedTemplate && (selectedTemplate.title === '天然水決済' || selectedTemplate.title === '浄水型決済')) {
-        const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
-        content = value.replace(/{phoneNumber}/g, cleanedPhone);
+    setSelectedTemplateValue(value);
+    if (mode === 'mmk') {
+      setShowSumaeruRadioButtons(value.includes('{sumaeruNumber}'));
     }
-    setFormData((prev) => ({...prev, freeText: content}));
   };
   
+  const handleSumaeruNumberChange = (newNumber: string) => {
+    setSelectedSumaeruNumber(newNumber);
+    // The useEffect will handle updating the freeText
+  };
+
   const resetForm = useCallback(() => {
     setFormData(prev => ({
       operator: prev.operator, // Keep operator name
@@ -122,6 +179,7 @@ const SendPage: React.FC = () => {
       freeText: '',
     }));
     setSelectedTemplateValue('');
+    setShowSumaeruRadioButtons(false);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -212,6 +270,28 @@ const SendPage: React.FC = () => {
                 placeholder={isLoading.operators ? '読み込み中...' : '担当者を検索または選択'}
               />
             </div>
+
+            {mode === 'mmk' && showSumaeruRadioButtons && (
+              <div className="animate-fade-in-up">
+                <label className="block text-sm font-medium text-slate-600 mb-2">株式会社すまえる 電話番号</label>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-3 bg-slate-50 rounded-md border border-slate-200">
+                  {sumaeruNumbers.map((item) => (
+                    <label key={item.value} className="flex items-center space-x-2 cursor-pointer p-1 rounded-md hover:bg-slate-200 transition-colors">
+                      <input
+                        type="radio"
+                        name="sumaeruNumber"
+                        value={item.value}
+                        checked={selectedSumaeruNumber === item.value}
+                        onChange={(e) => handleSumaeruNumberChange(e.target.value)}
+                        className="h-4 w-4 text-cyan-600 border-slate-400 focus:ring-cyan-500"
+                      />
+                      <span className="text-sm text-slate-700">{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-600 mb-1">送信先電話番号</label>
               <input
