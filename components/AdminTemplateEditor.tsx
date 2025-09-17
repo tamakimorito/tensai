@@ -1,60 +1,74 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AdminTemplate } from '../types';
 import Spinner from './Spinner';
 
 interface AdminTemplateEditorProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (template: Omit<AdminTemplate, 'id' | 'order'> & { id?: number }) => Promise<void>;
+  onSave: (template: { id?: number; title: string; content: string; active: boolean; updatedBy: string }) => Promise<void>;
   initialData?: AdminTemplate | null;
+  updatedByDefault?: string;
 }
 
-const Placeholders = [
-    '{phoneNumber}', '{sumaeruNumber}', '{operator}', '{today}'
+const PLACEHOLDERS = [
+  { key: '{phoneNumber}',   label: 'お客様の電話番号' },
+  { key: '{sumaeruNumber}', label: 'すまえる折返し番号（本文に含むとラジオ表示）' },
+  { key: '{operator}',      label: '担当者名' },
+  { key: '{today}',         label: '今日の日付（YYYY/MM/DD）' },
 ];
 
-const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ isOpen, onClose, onSave, initialData }) => {
+const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ isOpen, onClose, onSave, initialData, updatedByDefault }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [active, setActive] = useState(true);
+  const [updatedBy, setUpdatedBy] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const contentRef = React.useRef<HTMLTextAreaElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (initialData) {
-      setTitle(initialData.title);
-      setContent(initialData.content);
-      setActive(initialData.active);
-    } else {
-      setTitle('');
-      setContent('');
-      setActive(true);
+    if (isOpen) {
+        setTitle(initialData?.title || '');
+        setContent(initialData?.content || '');
+        setActive(initialData?.active ?? true);
+        setUpdatedBy(initialData?.updatedBy || updatedByDefault || localStorage.getItem('admin.updatedBy') || '');
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, updatedByDefault]);
 
   if (!isOpen) return null;
 
   const handleSave = async () => {
-    if (!title || !content) {
-      alert('タイトルと内容は必須です。');
+    if (!title.trim()) {
+      alert('タイトルは必須です。');
       return;
     }
+    if (!content.trim()) {
+      alert('内容は必須です。');
+      return;
+    }
+    if (!updatedBy.trim()) {
+      alert('更新者名を入力してください。');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await onSave({
+      const saveData = {
         id: initialData?.id,
-        title,
+        title: title.trim(),
         content,
         active,
-      });
+        updatedBy: updatedBy.trim(),
+      };
+      await onSave(saveData);
+      localStorage.setItem('admin.updatedBy', updatedBy.trim());
     } catch (error) {
-      alert(error instanceof Error ? error.message : '保存中にエラーが発生しました。');
+      // Error is now handled and toasted by the parent component
     } finally {
       setIsSaving(false);
     }
   };
 
-  const insertPlaceholder = (placeholder: string) => {
+  const insertAtCursor = (placeholder: string) => {
     const textarea = contentRef.current;
     if (!textarea) return;
 
@@ -75,12 +89,12 @@ const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ isOpen, onClo
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl m-4 p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-          <h3 className="text-xl font-semibold text-slate-800">{initialData ? '定型文を編集' : '定型文を新規作成'}</h3>
+          <h3 className="text-xl font-semibold text-slate-800">{initialData?.id ? '定型文を編集' : '定型文を新規作成'}</h3>
           <button onClick={onClose} disabled={isSaving} className="text-slate-400 hover:text-slate-600 disabled:opacity-50 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
           <div>
             <label htmlFor="template-title" className="block text-sm font-medium text-slate-600 mb-1">タイトル</label>
             <input
@@ -88,6 +102,17 @@ const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ isOpen, onClo
               id="template-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="template-updatedBy" className="block text-sm font-medium text-slate-600 mb-1">更新者</label>
+            <input
+              type="text"
+              id="template-updatedBy"
+              value={updatedBy}
+              onChange={(e) => setUpdatedBy(e.target.value)}
+              placeholder="あなたの名前（担当者名）"
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"
             />
           </div>
@@ -102,15 +127,26 @@ const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ isOpen, onClo
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-600 mb-2">プレースホルダ</label>
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="text-xs text-gray-500 mb-2">プレースホルダ（クリックで本文に挿入）</div>
             <div className="flex flex-wrap gap-2">
-                {Placeholders.map(p => (
-                    <button key={p} onClick={() => insertPlaceholder(p)} className="px-2 py-1 bg-slate-200 text-slate-700 text-xs font-mono rounded-md hover:bg-slate-300 transition-colors">
-                        {p}
-                    </button>
-                ))}
+              {PLACEHOLDERS.map(p => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => insertAtCursor(p.key)}
+                  className="px-2 py-1 bg-slate-200 text-slate-800 text-xs font-mono rounded-md hover:bg-slate-300 transition-colors"
+                  title={p.label}
+                >
+                  {p.key}
+                </button>
+              ))}
             </div>
+            <ul className="mt-3 text-xs text-slate-500 list-disc pl-5 space-y-1">
+              {PLACEHOLDERS.map(p => (
+                <li key={p.key}><code>{p.key}</code>：{p.label}</li>
+              ))}
+            </ul>
           </div>
           <div className="flex items-center">
             <input

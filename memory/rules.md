@@ -10,3 +10,4 @@
 - Admin UI is a dedicated page; master mode cannot send SMS.
 - Admin auth uses adminPass = <basePassword> + "master" (sessionStorage; cleared on logout).
 - Template placeholders: {phoneNumber} {sumaeruNumber} {operator} {today}
+- 管理系POSTはプリフライト回避のため既定ヘッダを付けない（GAS WebApp /exec）。

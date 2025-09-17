@@ -48,20 +48,27 @@ const AdminTemplatesPage: React.FC = () => {
         );
     }
     
-    const handleSaveTemplate = async (templateData: Omit<AdminTemplate, 'id' | 'order'> & { id?: number }) => {
+    const handleSaveTemplate = async (templateData: { id?: number; title: string; content: string; active: boolean; updatedBy: string }) => {
         if (!adminPass) {
-            setToast({ message: '管理者パスワードが見つかりません。', type: 'error' });
+            setToast({ message: '管理者パスワードが見つかりません（masterで再ログインしてください）。', type: 'error' });
             return;
         }
-        await gasService.upsertTemplate({
-            ...templateData,
-            adminPass,
-            mode: activeTab,
-            updatedBy: 'admin',
-        });
-        setToast({ message: 'テンプレートを保存しました。', type: 'success' });
-        setIsEditorOpen(false);
-        await loadTemplates();
+        try {
+            await gasService.upsertTemplate({
+                ...templateData,
+                adminPass,
+                mode: activeTab,
+            });
+            setToast({ message: 'テンプレートを保存しました。', type: 'success' });
+            setIsEditorOpen(false);
+            setEditingTemplate(null);
+            await loadTemplates();
+        } catch (error: any) {
+            const msg = error?.message === 'ADMIN_REQUIRED' 
+                ? '管理者パスワードが無効です（＜基礎パス＞+master を再入力）。' 
+                : (error?.message || '保存に失敗しました。');
+            setToast({ message: msg, type: 'error' });
+        }
     };
 
     const handleToggleActive = async (template: AdminTemplate) => {
@@ -75,7 +82,6 @@ const AdminTemplatesPage: React.FC = () => {
                 mode: activeTab,
                 id: template.id,
                 active: !template.active,
-                updatedBy: 'admin',
             });
             setToast({ message: 'ステータスを更新しました。', type: 'success' });
             await loadTemplates();
@@ -89,6 +95,7 @@ const AdminTemplatesPage: React.FC = () => {
             setToast({ message: '管理者パスワードが見つかりません。', type: 'error' });
             return;
         }
+
         const newTemplates = [...templates];
         const item = newTemplates[index];
         const swapIndex = direction === 'up' ? index - 1 : index + 1;
@@ -102,7 +109,7 @@ const AdminTemplatesPage: React.FC = () => {
         setTemplates(newTemplates.map((t, i) => ({...t, order: i+1})));
 
         try {
-            await gasService.reorderTemplates({ adminPass, mode: activeTab, orders, updatedBy: 'admin' });
+            await gasService.reorderTemplates({ adminPass, mode: activeTab, orders });
             setToast({ message: '並び順を更新しました。', type: 'success' });
         } catch (error) {
             setToast({ message: error instanceof Error ? error.message : '並び順の更新に失敗しました。', type: 'error' });
@@ -111,6 +118,7 @@ const AdminTemplatesPage: React.FC = () => {
     };
 
     const filteredTemplates = templates.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    const updatedByDefault = localStorage.getItem('admin.updatedBy') || '';
 
     return (
         <>
@@ -122,8 +130,8 @@ const AdminTemplatesPage: React.FC = () => {
                         <button onClick={() => setActiveTab('mmk')} className={`px-4 py-1 rounded-md text-sm font-medium ${activeTab === 'mmk' ? 'bg-white text-cyan-600 shadow' : 'text-slate-600 hover:bg-slate-300'}`}>MMK</button>
                         <button onClick={() => setActiveTab('kmk')} className={`px-4 py-1 rounded-md text-sm font-medium ${activeTab === 'kmk' ? 'bg-white text-cyan-600 shadow' : 'text-slate-600 hover:bg-slate-300'}`}>KMK</button>
                     </div>
-                    <div className="flex items-center space-x-4">
-                         <input type="text" placeholder="タイトルで検索..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-64 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"/>
+                     <div className="flex items-center space-x-4">
+                        <input type="text" placeholder="タイトルで検索..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-64 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500"/>
                         <button onClick={() => { setEditingTemplate(null); setIsEditorOpen(true); }} className="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700">新規追加</button>
                     </div>
                 </div>
@@ -135,15 +143,17 @@ const AdminTemplatesPage: React.FC = () => {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">有効</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">タイトル</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">更新日</th>
+                                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">更新者</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
-                           {isLoading ? <SkeletonLoader rows={5} columns={4} /> : filteredTemplates.map((t, index) => (
+                           {isLoading ? <SkeletonLoader rows={5} columns={5} /> : filteredTemplates.map((t, index) => (
                                 <tr key={t.id}>
                                     <td className="px-4 py-4"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${t.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{t.active ? '有効' : '無効'}</span></td>
                                     <td className="px-4 py-4 text-sm text-slate-800 font-medium">{t.title}</td>
                                     <td className="px-4 py-4 text-sm text-slate-500">{t.updatedAt ? new Date(t.updatedAt).toLocaleString('ja-JP') : 'N/A'}</td>
+                                    <td className="px-4 py-4 text-sm text-slate-500">{t.updatedBy}</td>
                                     <td className="px-4 py-4 text-sm font-medium space-x-2 flex items-center">
                                         <button onClick={() => { setEditingTemplate(t); setIsEditorOpen(true); }} className="text-cyan-600 hover:text-cyan-800">編集</button>
                                         <button onClick={() => handleToggleActive(t)} className="text-slate-500 hover:text-slate-700">{t.active ? '無効化' : '有効化'}</button>
@@ -159,9 +169,10 @@ const AdminTemplatesPage: React.FC = () => {
 
             <AdminTemplateEditor
                 isOpen={isEditorOpen}
-                onClose={() => setIsEditorOpen(false)}
+                onClose={() => { setIsEditorOpen(false); setEditingTemplate(null); }}
                 onSave={handleSaveTemplate}
                 initialData={editingTemplate}
+                updatedByDefault={updatedByDefault}
             />
         </>
     );

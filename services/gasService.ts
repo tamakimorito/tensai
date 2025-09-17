@@ -10,6 +10,36 @@ const parseCsv = (text: string): string[][] => {
   });
 };
 
+/**
+ * A robust helper for POSTing to Google Apps Script Web Apps.
+ * - Removes Content-Type header to avoid CORS preflight.
+ * - Handles both network-level and application-level (e.g., ok:false) errors.
+ */
+async function postJsonNoHeader(url: string, body: any) {
+  // Do not set Content-Type header to avoid preflight OPTIONS request
+  const res = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
+
+  // Handle network-level errors (e.g., 403, 500)
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const j = await res.json();
+      detail = j?.code || j?.error || '';
+    } catch {
+      // Ignore if response is not JSON
+    }
+    throw new Error(detail || `HTTP Error: ${res.status}`);
+  }
+  
+  // Handle application-level errors (GAS often returns 200 OK with an error payload)
+  const json = await res.json().catch(() => ({})); // Gracefully handle non-JSON responses
+  if (json && json.ok === false) {
+    throw new Error(String(json.code || json.message || 'REQUEST_FAILED'));
+  }
+  return json;
+}
+
+
 export const gasService = {
   fetchPassword: async (): Promise<string> => {
     try {
@@ -159,23 +189,14 @@ export const gasService = {
   },
 
   upsertTemplate: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; id?: number; title: string; content: string; active?: boolean; order?: number; updatedBy?: string; }): Promise<void> => {
-    const response = await fetch(`${GAS_URL}?action=template_upsert`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!response.ok) throw new Error('テンプレ保存に失敗しました');
-    const json = await response.json();
-    if (!json.ok) throw new Error(json.message || 'テンプレ保存に失敗しました');
+    await postJsonNoHeader(`${GAS_URL}?action=template_upsert`, body);
   },
 
-  toggleTemplate: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; id: number; active: boolean; updatedBy: string }): Promise<void> => {
-    const response = await fetch(`${GAS_URL}?action=template_toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!response.ok) throw new Error('有効/無効の更新に失敗しました');
-    const json = await response.json();
-    if (!json.ok) throw new Error(json.message || '有効/無効の更新に失敗しました');
+  toggleTemplate: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; id: number; active: boolean; }): Promise<void> => {
+    await postJsonNoHeader(`${GAS_URL}?action=template_toggle`, body);
   },
 
-  reorderTemplates: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; orders: { id: number; order: number; }[]; updatedBy: string }): Promise<void> => {
-    const response = await fetch(`${GAS_URL}?action=template_reorder`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!response.ok) throw new Error('並び順の更新に失敗しました');
-    const json = await response.json();
-    if (!json.ok) throw new Error(json.message || '並び順の更新に失敗しました');
+  reorderTemplates: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; orders: { id: number; order: number; }[]; }): Promise<void> => {
+    await postJsonNoHeader(`${GAS_URL}?action=template_reorder`, body);
   },
 };
