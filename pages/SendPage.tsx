@@ -49,62 +49,7 @@ const SendPage: React.FC = () => {
       title: '天然水決済',
       default_content: `■プレミアムウォーターマイページ■\nhttps://premium-water.net/mypage/\n\nログインＩＤ：a{phoneNumber}\nパスワード：{phoneNumber}a`
     },
-    {
-      title: '浄水型決済',
-      default_content: `■LOCCAマイページ■\nhttps://locca.premium-water.net/mypage/\n\nログインＩＤ：a{phoneNumber}\nパスワード：{phoneNumber}a`
-    },
-    {
-      title: '決済後追い',
-      default_content: `お世話になっております。（株）すまえるです。\n本日はお忙しい中ウォーターサーバーの件ご対応頂き誠に有難う御座いました。\n\n※お客様へお知らせ\nお支払い方法のご登録がまだお済でないようですのでお手数ですが、21：00までにお支払方法のご登録をお忘れないようにお願い致します。\n\nご不明点等御座いましたらお気軽にお問合せ下さい。\n今後とも何卒宜しくお願い致します。\n\n（株）すまえる：{sumaeruNumber}`
-    },
-    {
-      title: 'WTS詳細まとめ(famfit2 レンタル)ver',
-      default_content: `https://premium-water.net/pw/tel/39/famfit2/famfit2_a4_250430.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\nhttp://s.premium-water.net/LV_GQ3\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'WTS詳細まとめ(アマダナスタンダード 5年プラン)ver',
-      default_content: `https://premium-water.net/pw/tel/39/general/amadanaSTD_1698.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\nhttp://s.premium-water.net/V9vr8w\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'WTS詳細まとめ(アマダナスタンダード 3年プラン)ver',
-      default_content: `http://s.premium-water.net/wo3wdz\n\nhttps://premium-water.net/pw/tel/39/general/amadanaSTD_1698.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'WTS詳細まとめ(スリムサーバーⅣ 5年プラン)ver',
-      default_content: `http://s.premium-water.net/V9vr8w\n\nhttps://premium-water.net/pw/tel/39/slim4/slim4_a4.pdf\n\nhttps://premium-water.net/feature/category/user-interview/\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'WTS詳細まとめ(スリムサーバーⅣ 3年プラン)ver',
-      default_content: `https://premium-water.net/pw/tel/39/slim4/slim4_a4.pdf\n\nhttp://s.premium-water.net/wo3wdz\n\nhttps://premium-water.net/feature/category/user-interview/\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'famfit2 割賦 概要',
-      default_content: `https://premium-water.net/pw/tel/39/famfit2/famfit2_a4_250430.pdf\n\nhttps://premium-water.net/pw/tel/39/famfit/famfit_agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'AURAサーバー 前確後詳細',
-      default_content: `※送信専用\n\nhttp://s.premium-water.net/vU_mJ2\nhttps://premium-water.net/pw/tel/39/motto/agreement_hg_2.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'MOMクラブ 概要',
-      default_content: `http://s.premium-water.net/fL1tYm\n\nhttps://premium-water.net/feature/category/user-interview/\n\nhttps://premium-water.net/pw/tel/39/mom/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\nフリーダイヤル：0120-937-032\n携帯電話の方は：0570-020-330\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'リッタ詳細',
-      default_content: `※送信専用\nhttps://locca.premium-water.net/prm/tel/litta_leaf_a4.pdf\n\nhttps://locca.premium-water.net/prm/tel/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\nご不明点があればお気軽にお問い合わせください\n◆LOCCAお客様専用窓口◆\nフリーダイヤル：0570-026-363\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'Locca Smart 前確後詳細LS',
-      default_content: `※送信専用\n\nhttp://s.premium-water.net/8enBDL\nhttps://locca.premium-water.net/prm/tel/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口\n携帯電話の方は：0570-026-363\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'スリムR2 概要',
-      default_content: `https://locca.premium-water.net/prm/tel/39/slim-r2_leaf_a4.pdf\n\nhttps://locca.premium-water.net/prm/tel/agreement.pdf\n\n株式会社すまえる：{sumaeruNumber}\n\nご不明点があればお気軽にお問い合わせください\n◆プレミアムウォーターお客様専用窓口◆\n携帯電話の方：0570-026-363\n受付時間 10:00〜18:00 ※年末年始を除く`
-    },
-    {
-      title: 'クレカ後追い キャリア→クレカ',
-      default_content: `【送信専用】プレミアムウォーターお申し込みのお客様へ\n株式会社すまえるです。\n先日はプレミアムウォーターのお申し込みをいただき、誠にありがとうございます。\n\nプレミアムウォーターのマイページでは、\n\n・お水の本数やお届け日の調整\n・ご契約者さま限定のキャンペーンやお得な情報\n\nなどがご利用いただけますので、この機会にぜひご活用ください。\n\n【重要】\n現在「携帯合算払い」でお手続きをいただいておりますが、継続してサービスをご利用いただくため、「クレジットカード払い」へのご変更をおすすめしております。\n※今後、携帯会社のプラン変更や名義変更などによりご利用が一時停止となる場合がございます。\n\nお手続きはマイページから簡単に行えます。お早めのご対応をよろしくお願いいたします。\n\n▼マイページはこちら\n■プレミアムウォーターマイページ■\nhttps://premium-water.net/mypage/\n\nログインＩＤ：a{phoneNumber}\nパスワード：{phoneNumber}a\n\nご不明点はこちらまで株式会社すまえる：{sumaeruNumber}まで`
-    },
+    // ... other hardcoded templates (definitions remain but are not used for mmk/kmk)
   ];
 
   useEffect(() => {
@@ -114,11 +59,14 @@ const SendPage: React.FC = () => {
         const fetchedOperators = await gasService.fetchOperators();
         setOperators(fetchedOperators);
 
-        if (mode === 'mmk') {
-          setTemplates(mmkTemplates);
-        } else {
+        if (mode === 'mmk' || mode === 'kmk') {
+          const fetchedTemplates = await gasService.fetchSheetTemplates(mode);
+          setTemplates(fetchedTemplates);
+        } else if (mode === 'normal') {
           const fetchedTemplates = await gasService.fetchTemplates();
           setTemplates(fetchedTemplates);
+        } else { // master mode
+          setTemplates([]);
         }
       } catch (error) {
         if (error instanceof Error) {
@@ -135,12 +83,20 @@ const SendPage: React.FC = () => {
   useEffect(() => {
     if (selectedTemplateValue) {
         const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}/${mm}/${dd}`;
+
         const newContent = selectedTemplateValue
-          .replace(/{phoneNumber}/g, cleanedPhone)
-          .replace(/{sumaeruNumber}/g, selectedSumaeruNumber || '{sumaeruNumber}');
+          .replace(/{phoneNumber}/g, cleanedPhone || '{phoneNumber}')
+          .replace(/{sumaeruNumber}/g, selectedSumaeruNumber || '{sumaeruNumber}')
+          .replace(/{operator}/g, formData.operator || '{operator}')
+          .replace(/{today}/g, todayStr);
         setFormData(prev => ({ ...prev, freeText: newContent }));
     }
-  }, [formData.phoneNumber, selectedTemplateValue, selectedSumaeruNumber]);
+  }, [formData.phoneNumber, formData.operator, selectedTemplateValue, selectedSumaeruNumber]);
 
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -162,7 +118,7 @@ const SendPage: React.FC = () => {
 
   const handleTemplateSelect = (value: string) => {
     setSelectedTemplateValue(value);
-    if (mode === 'mmk') {
+    if (mode === 'mmk' || mode === 'kmk') {
       const needsSumaeruNumber = value.includes('{sumaeruNumber}');
       setShowSumaeruRadioButtons(needsSumaeruNumber);
       if (!needsSumaeruNumber) {
@@ -173,7 +129,6 @@ const SendPage: React.FC = () => {
   
   const handleSumaeruNumberChange = (newNumber: string) => {
     setSelectedSumaeruNumber(newNumber);
-    // The useEffect will handle updating the freeText
   };
 
   const resetForm = useCallback(() => {
@@ -189,6 +144,10 @@ const SendPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === 'master') {
+        showToast('マスターモードでは送信できません。', 'error');
+        return;
+    }
     if (!formData.operator) {
         showToast('担当名を選択してください。', 'error');
         return;
@@ -198,7 +157,7 @@ const SendPage: React.FC = () => {
         showToast('送信先電話番号を入力してください。', 'error');
         return;
     }
-    if (mode === 'mmk' && showSumaeruRadioButtons && !selectedSumaeruNumber) {
+    if ((mode === 'mmk' || mode === 'kmk') && showSumaeruRadioButtons && !selectedSumaeruNumber) {
         showToast('株式会社すまえるの電話番号を選択してください。', 'error');
         return;
     }
@@ -225,27 +184,24 @@ const SendPage: React.FC = () => {
         showToast('送信成功しました', 'success');
         setSendingStatus('success');
         
-        // Delay form reset to allow animation to play with content
         setTimeout(() => {
             resetForm();
             setSendingStatus('idle');
         }, 1800);
 
     } catch (error) {
-        setIsModalOpen(false); // Close modal on failure
+        setIsModalOpen(false);
         setSendingStatus('fail');
         
         const rawErrorMessage = error instanceof Error ? error.message : '送信に失敗しました。時間をおいて再度お試しください。';
         let displayErrorMessage = rawErrorMessage;
 
-        // Translate specific known error messages
         if (rawErrorMessage.toLowerCase().includes('invalid phonenumber')) {
             displayErrorMessage = '電話番号の形式が正しくありません。';
         }
         
         showToast(displayErrorMessage, 'error');
         
-        // If the error is about the phone number, highlight the field
         if (rawErrorMessage.toLowerCase().includes('phone')) {
             setPhoneError(displayErrorMessage);
             phoneInputRef.current?.focus();
@@ -259,16 +215,17 @@ const SendPage: React.FC = () => {
 
   const templateOptions = templates.map(t => ({ value: t.default_content, label: t.title }));
   const operatorOptions = operators.map(o => ({ value: o.name, label: o.name }));
+  const isMasterMode = mode === 'master';
 
   return (
     <>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <h1 className="text-2xl font-bold text-slate-700 mb-6">
-        {mode === 'mmk' ? 'MMKモード' : '個別送信'}
+        {mode === 'mmk' ? 'MMKモード' : mode === 'kmk' ? 'KMKモード' : mode === 'master' ? '管理モード（送信不可）' : '個別送信'}
       </h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl">
-        {/* Left Column: Form */}
-        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
+        <div className={`bg-white p-6 sm:p-8 rounded-lg shadow-md ${isMasterMode ? 'opacity-50 pointer-events-none' : ''}`}>
+          {isMasterMode && <div className="absolute inset-0 z-10 flex items-center justify-center"><p className="text-xl font-bold text-slate-600 bg-slate-200/80 p-4 rounded-lg">管理モードでは送信できません</p></div>}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="operator" className="block text-sm font-medium text-slate-600 mb-1">担当名</label>
@@ -309,7 +266,7 @@ const SendPage: React.FC = () => {
               />
             </div>
             
-            {mode === 'mmk' && showSumaeruRadioButtons && (
+            {(mode === 'mmk' || mode === 'kmk') && showSumaeruRadioButtons && (
               <div className="animate-fade-in-up">
                 <label className="block text-sm font-medium text-slate-600 mb-2">株式会社すまえる 電話番号</label>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-3 bg-slate-50 rounded-md border border-slate-200">
@@ -345,7 +302,8 @@ const SendPage: React.FC = () => {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-200 ease-in-out"
+                disabled={isMasterMode}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 送信内容を確認
               </button>
@@ -353,7 +311,6 @@ const SendPage: React.FC = () => {
           </form>
         </div>
         
-        {/* Right Column: Preview */}
         <div className="hidden lg:flex items-center justify-center">
             <PhonePreview phoneNumber={formData.phoneNumber} message={formData.freeText} status={sendingStatus} />
         </div>

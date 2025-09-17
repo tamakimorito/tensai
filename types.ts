@@ -9,6 +9,16 @@ export interface Template {
   default_content: string;
 }
 
+export interface AdminTemplate {
+  id: number;
+  title: string;
+  content: string;
+  active: boolean;
+  order: number;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 export interface Operator {
   name: string;
 }

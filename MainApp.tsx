@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import SendPage from './pages/SendPage';
 import HistoryPage from './pages/HistoryPage';
+import AdminTemplatesPage from './pages/AdminTemplates';
 
 const MainApp: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ const MainApp: React.FC = () => {
             <Routes>
                 <Route path="/" element={<SendPage />} />
                 <Route path="/history" element={<HistoryPage />} />
+                <Route path="/admin/templates" element={<AdminTemplatesPage />} />
             </Routes>
         </main>
       </div>

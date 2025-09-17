@@ -1,5 +1,5 @@
 import { GAS_URL, HISTORY_PAGE_SIZE, PASSWORD_SHEET_URL, OPERATORS_SHEET_URL } from '../constants';
-import { HistoryEntry, HistoryFilters, GasErrorResponse, Template, Operator } from '../types';
+import { HistoryEntry, HistoryFilters, GasErrorResponse, Template, Operator, AdminTemplate } from '../types';
 
 // Helper to parse CSV text from Google Sheets
 const parseCsv = (text: string): string[][] => {
@@ -68,7 +68,7 @@ export const gasService = {
         body: JSON.stringify(payload),
       });
 
-      // GAS Web Apps often return a 200 OK status even for application-level errors.
+      // GAS Web Apps often return a 200 OK status for application-level errors.
       // Therefore, we must inspect the JSON body to determine the true outcome.
       const responseData = await response.json().catch(() => {
           // If JSON parsing fails, it's likely a server-side issue or network problem.
@@ -125,5 +125,57 @@ export const gasService = {
       console.error('Failed to fetch history:', error);
       throw new Error('通信エラーが発生しました。ネットワークをご確認ください。');
     }
+  },
+  
+  // New functions for Admin Template Management
+  fetchSheetTemplates: async (mode: 'mmk' | 'kmk'): Promise<Template[]> => {
+    const response = await fetch(`${GAS_URL}?action=template_list&mode=${mode}`);
+    if (!response.ok) throw new Error('テンプレ取得に失敗しました');
+    const json = await response.json();
+    if (!json.ok || !Array.isArray(json.data)) return [];
+    // Only return active templates for the send page, sorted by order
+    const activeTemplates = json.data.filter((t: any) => t.active);
+    activeTemplates.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+    return activeTemplates.map((t: any) => ({
+      title: String(t.title || ''),
+      default_content: String(t.content || ''),
+    }));
+  },
+
+  fetchAdminTemplates: async (mode: 'mmk' | 'kmk'): Promise<AdminTemplate[]> => {
+    const response = await fetch(`${GAS_URL}?action=template_list&mode=${mode}`);
+    if (!response.ok) throw new Error('テンプレ取得に失敗しました');
+    const json = await response.json();
+    if (!json.ok || !Array.isArray(json.data)) return [];
+    return json.data.map((t: any) => ({
+      id: t.id,
+      title: String(t.title || ''),
+      content: String(t.content || ''),
+      active: Boolean(t.active),
+      order: Number(t.order || 0),
+      updatedAt: String(t.updatedAt || ''),
+      updatedBy: String(t.updatedBy || ''),
+    })).sort((a,b) => a.order - b.order);
+  },
+
+  upsertTemplate: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; id?: number; title: string; content: string; active?: boolean; order?: number; updatedBy?: string; }): Promise<void> => {
+    const response = await fetch(`${GAS_URL}?action=template_upsert`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!response.ok) throw new Error('テンプレ保存に失敗しました');
+    const json = await response.json();
+    if (!json.ok) throw new Error(json.message || 'テンプレ保存に失敗しました');
+  },
+
+  toggleTemplate: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; id: number; active: boolean; updatedBy: string }): Promise<void> => {
+    const response = await fetch(`${GAS_URL}?action=template_toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!response.ok) throw new Error('有効/無効の更新に失敗しました');
+    const json = await response.json();
+    if (!json.ok) throw new Error(json.message || '有効/無効の更新に失敗しました');
+  },
+
+  reorderTemplates: async (body: { adminPass: string; mode: 'mmk' | 'kmk'; orders: { id: number; order: number; }[]; updatedBy: string }): Promise<void> => {
+    const response = await fetch(`${GAS_URL}?action=template_reorder`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!response.ok) throw new Error('並び順の更新に失敗しました');
+    const json = await response.json();
+    if (!json.ok) throw new Error(json.message || '並び順の更新に失敗しました');
   },
 };

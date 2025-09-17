@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { gasService } from '../services/gasService';
 
-type AuthMode = 'normal' | 'mmk';
+type AuthMode = 'normal' | 'mmk' | 'kmk' | 'master';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -24,8 +24,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (sessionAuth === 'true') {
       const sessionMode = sessionStorage.getItem('authMode') as AuthMode;
       setIsAuthenticated(true);
-      if (sessionMode === 'mmk') {
-        setMode('mmk');
+      if (sessionMode === 'mmk' || sessionMode === 'kmk' || sessionMode === 'master') {
+        setMode(sessionMode);
       }
     }
     setIsLoading(false);
@@ -35,14 +35,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const correctPassword = await gasService.fetchPassword();
-      const mmkPasswordSuffix = 'mmk';
+      const passwordLower = password.toLowerCase();
+      
+      const suffixes = ['mmk', 'kmk', 'master'];
+      let matchedSuffix: AuthMode | null = null;
+      let basePassword = password;
 
-      if (password.toLowerCase().endsWith(mmkPasswordSuffix) && password.slice(0, -mmkPasswordSuffix.length) === correctPassword) {
-        sessionStorage.setItem('isAuthenticated', 'true');
-        sessionStorage.setItem('authMode', 'mmk');
-        setIsAuthenticated(true);
-        setMode('mmk');
-        return true;
+      for (const suffix of suffixes) {
+          if (passwordLower.endsWith(suffix)) {
+              const potentialBase = password.slice(0, -suffix.length);
+              if (potentialBase === correctPassword) {
+                  matchedSuffix = suffix as AuthMode;
+                  basePassword = potentialBase;
+                  break;
+              }
+          }
+      }
+
+      if (matchedSuffix) {
+          sessionStorage.setItem('isAuthenticated', 'true');
+          sessionStorage.setItem('authMode', matchedSuffix);
+          setIsAuthenticated(true);
+          setMode(matchedSuffix);
+          if (matchedSuffix === 'master') {
+              sessionStorage.setItem('adminPass', password);
+          }
+          return true;
       }
       
       if (password === correctPassword) {
@@ -52,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMode('normal');
         return true;
       }
+
       return false;
     } catch (error) {
       console.error(error);
@@ -64,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     sessionStorage.removeItem('isAuthenticated');
     sessionStorage.removeItem('authMode');
+    sessionStorage.removeItem('adminPass');
     setIsAuthenticated(false);
     setMode('normal');
   };
