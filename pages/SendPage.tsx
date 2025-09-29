@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { SendFormData, Template, Operator } from '../types';
+import { SendFormData, Template, Operator, HistoryEntry } from '../types';
 import { gasService } from '../services/gasService';
 import { cleanPhoneNumber } from '../utils/formatters';
 import Modal from '../components/Modal';
@@ -42,6 +42,10 @@ const SendPage: React.FC = () => {
   const phoneInputRef = useRef<HTMLInputElement>(null);
   const [selectedSumaeruNumber, setSelectedSumaeruNumber] = useState<string>('');
   const [showSumaeruRadioButtons, setShowSumaeruRadioButtons] = useState<boolean>(false);
+  
+  const [lastHistory, setLastHistory] = useState<HistoryEntry | null>(null);
+  const [isFetchingHistory, setIsFetchingHistory] = useState<boolean>(false);
+  const debounceTimeoutRef = useRef<number | null>(null);
 
 
   const mmkTemplates: Template[] = [
@@ -51,6 +55,10 @@ const SendPage: React.FC = () => {
     },
     // ... other hardcoded templates (definitions remain but are not used for mmk/kmk)
   ];
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -99,9 +107,43 @@ const SendPage: React.FC = () => {
   }, [formData.phoneNumber, formData.operator, selectedTemplateValue, selectedSumaeruNumber]);
 
 
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-  };
+  const fetchLastHistory = useCallback(async (phone: string) => {
+    setIsFetchingHistory(true);
+    setLastHistory(null);
+    try {
+        const cleanedPhone = cleanPhoneNumber(phone);
+        if (cleanedPhone.length < 10) { // Basic validation
+            setIsFetchingHistory(false);
+            return;
+        }
+        const results = await gasService.fetchHistory(
+            { operator: '', phoneNumber: cleanedPhone, start: '', end: '' }, 1, 1
+        );
+        setLastHistory(results.length > 0 ? results[0] : null);
+    } catch (error) {
+        showToast('前回送信の取得に失敗しました', 'error');
+    } finally {
+        setIsFetchingHistory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+      
+      const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
+      if (cleanedPhone.length < 10) {
+          setLastHistory(null);
+          return;
+      }
+      
+      debounceTimeoutRef.current = window.setTimeout(() => {
+          fetchLastHistory(formData.phoneNumber);
+      }, 300);
+
+      return () => {
+          if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+      };
+  }, [formData.phoneNumber, fetchLastHistory]);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -308,6 +350,32 @@ const SendPage: React.FC = () => {
                 送信内容を確認
               </button>
             </div>
+            
+            <div>
+              <h3 className="text-sm font-medium text-slate-600 mb-2">前回送信内容（この番号宛）</h3>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-md min-h-[10rem]">
+                {isFetchingHistory ? (
+                  <div className="flex items-center text-slate-500 text-sm">
+                    <svg className="animate-spin mr-2 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    <span>検索中...</span>
+                  </div>
+                ) : lastHistory ? (
+                  <div className="text-sm space-y-2 animate-fade-in-up">
+                    <p className="text-xs text-slate-500">
+                      {new Date(lastHistory.timestamp).toLocaleString('ja-JP')} / 担当: {lastHistory.operator}
+                    </p>
+                    <p className="text-slate-800 whitespace-pre-wrap break-words max-h-48 overflow-auto bg-white p-3 rounded-md border border-slate-200">
+                      {lastHistory.message}
+                    </p>
+                  </div>
+                ) : cleanPhoneNumber(formData.phoneNumber).length >= 10 ? (
+                    <p className="text-slate-500 text-sm">前回送信は見つかりません。</p>
+                ) : (
+                    <p className="text-slate-400 text-sm">電話番号を入力すると、前回送信内容を検索します。</p>
+                )}
+              </div>
+            </div>
+
           </form>
         </div>
         

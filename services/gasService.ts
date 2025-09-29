@@ -129,12 +129,12 @@ export const gasService = {
     }
   },
 
-  fetchHistory: async (filters: HistoryFilters, page: number): Promise<HistoryEntry[]> => {
+  fetchHistory: async (filters: HistoryFilters, page: number, pageSize: number = HISTORY_PAGE_SIZE): Promise<HistoryEntry[]> => {
     try {
       const params = new URLSearchParams({
         action: 'history',
         page: page.toString(),
-        pageSize: HISTORY_PAGE_SIZE.toString(),
+        pageSize: pageSize.toString(),
       });
       if (filters.operator) params.append('operator', filters.operator);
       if (filters.phoneNumber) params.append('phoneNumber', filters.phoneNumber);
