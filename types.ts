@@ -37,6 +37,14 @@ export interface HistoryFilters {
   phoneNumber: string;
   start: string;
   end: string;
+  days?: number;
+}
+
+export interface HistoryResponse {
+  data: HistoryEntry[];
+  meta?: {
+    lookbackDays?: number;
+  };
 }
 
 export interface GasErrorResponse {

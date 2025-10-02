@@ -1,5 +1,5 @@
 import { GAS_URL, HISTORY_PAGE_SIZE, PASSWORD_SHEET_URL, OPERATORS_SHEET_URL } from '../constants';
-import { HistoryEntry, HistoryFilters, GasErrorResponse, Template, Operator, AdminTemplate } from '../types';
+import { HistoryEntry, HistoryFilters, GasErrorResponse, Template, Operator, AdminTemplate, HistoryResponse } from '../types';
 
 // Helper to parse CSV text from Google Sheets
 const parseCsv = (text: string): string[][] => {
@@ -129,7 +129,7 @@ export const gasService = {
     }
   },
 
-  fetchHistory: async (filters: HistoryFilters, page: number, pageSize: number = HISTORY_PAGE_SIZE): Promise<HistoryEntry[]> => {
+  fetchHistory: async (filters: HistoryFilters, page: number, pageSize: number = HISTORY_PAGE_SIZE): Promise<HistoryResponse> => {
     try {
       const params = new URLSearchParams({
         action: 'history',
@@ -140,6 +140,7 @@ export const gasService = {
       if (filters.phoneNumber) params.append('phoneNumber', filters.phoneNumber);
       if (filters.start) params.append('start', filters.start);
       if (filters.end) params.append('end', filters.end);
+      if (filters.days) params.append('days', filters.days.toString());
       
       const response = await fetch(`${GAS_URL}?${params.toString()}`);
 
@@ -148,9 +149,9 @@ export const gasService = {
       }
       const data = await response.json();
       if (data && Array.isArray(data.data)) {
-        return data.data;
+        return data;
       }
-      return [];
+      return { data: [] };
     } catch (error) {
       console.error('Failed to fetch history:', error);
       throw new Error('通信エラーが発生しました。ネットワークをご確認ください。');

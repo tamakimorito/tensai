@@ -20,13 +20,22 @@ const HistoryPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [page, setPage] = useState<number>(1);
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+  const [lookbackDays, setLookbackDays] = useState<number | null>(null);
 
   const fetchHistoryData = useCallback(async (currentPage: number, currentFilters: HistoryFilters) => {
     setIsLoading(true);
+    setLookbackDays(null);
     try {
-      const results = await gasService.fetchHistory(currentFilters, currentPage);
-      setHistory(results);
-      setHasNextPage(results.length === HISTORY_PAGE_SIZE);
+      const filtersToUse: HistoryFilters = { ...currentFilters };
+      if (!filtersToUse.start && !filtersToUse.end && filtersToUse.phoneNumber) {
+        filtersToUse.days = 7;
+      }
+      const results = await gasService.fetchHistory(filtersToUse, currentPage);
+      setHistory(results.data);
+      if (results.meta?.lookbackDays) {
+        setLookbackDays(results.meta.lookbackDays);
+      }
+      setHasNextPage(results.data.length === HISTORY_PAGE_SIZE);
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message);
@@ -79,6 +88,12 @@ const HistoryPage: React.FC = () => {
           </div>
           <button onClick={handleSearch} className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">検索</button>
         </div>
+
+        {lookbackDays != null && (
+         <p className="text-xs text-slate-500 mb-2">
+           ※ 電話番号のみの検索のため <b>過去{lookbackDays}日間</b>の結果を表示しています。
+         </p>
+       )}
 
         {/* Results Table */}
         <div className="overflow-x-auto">

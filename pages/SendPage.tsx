@@ -43,9 +43,10 @@ const SendPage: React.FC = () => {
   const [selectedSumaeruNumber, setSelectedSumaeruNumber] = useState<string>('');
   const [showSumaeruRadioButtons, setShowSumaeruRadioButtons] = useState<boolean>(false);
   
-  const [lastHistory, setLastHistory] = useState<HistoryEntry | null>(null);
+  const [historyList, setHistoryList] = useState<HistoryEntry[]>([]);
   const [isFetchingHistory, setIsFetchingHistory] = useState<boolean>(false);
   const debounceTimeoutRef = useRef<number | null>(null);
+  const [historyNote, setHistoryNote] = useState<number | null>(null);
 
 
   const mmkTemplates: Template[] = [
@@ -107,9 +108,10 @@ const SendPage: React.FC = () => {
   }, [formData.phoneNumber, formData.operator, selectedTemplateValue, selectedSumaeruNumber]);
 
 
-  const fetchLastHistory = useCallback(async (phone: string) => {
+  const fetchPhoneNumberHistory = useCallback(async (phone: string) => {
     setIsFetchingHistory(true);
-    setLastHistory(null);
+    setHistoryList([]);
+    setHistoryNote(null);
     try {
         const cleanedPhone = cleanPhoneNumber(phone);
         if (cleanedPhone.length < 10) { // Basic validation
@@ -117,11 +119,12 @@ const SendPage: React.FC = () => {
             return;
         }
         const results = await gasService.fetchHistory(
-            { operator: '', phoneNumber: cleanedPhone, start: '', end: '' }, 1, 1
+            { operator: '', phoneNumber: cleanedPhone, start: '', end: '', days: 3 }, 1, 1000
         );
-        setLastHistory(results.length > 0 ? results[0] : null);
+        setHistoryList(results.data);
+        setHistoryNote(results.meta?.lookbackDays ?? 3);
     } catch (error) {
-        showToast('前回送信の取得に失敗しました', 'error');
+        showToast('送信履歴の取得に失敗しました', 'error');
     } finally {
         setIsFetchingHistory(false);
     }
@@ -132,18 +135,19 @@ const SendPage: React.FC = () => {
       
       const cleanedPhone = cleanPhoneNumber(formData.phoneNumber);
       if (cleanedPhone.length < 10) {
-          setLastHistory(null);
+          setHistoryList([]);
+          setHistoryNote(null);
           return;
       }
       
       debounceTimeoutRef.current = window.setTimeout(() => {
-          fetchLastHistory(formData.phoneNumber);
+          fetchPhoneNumberHistory(formData.phoneNumber);
       }, 300);
 
       return () => {
           if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
       };
-  }, [formData.phoneNumber, fetchLastHistory]);
+  }, [formData.phoneNumber, fetchPhoneNumberHistory]);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -352,26 +356,35 @@ const SendPage: React.FC = () => {
             </div>
             
             <div>
-              <h3 className="text-sm font-medium text-slate-600 mb-2">前回送信内容（この番号宛）</h3>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-md min-h-[10rem]">
+              <h3 className="text-sm font-medium text-slate-600 mb-2">送信履歴（この番号宛）</h3>
+              {historyNote !== null && (
+                <p className="text-xs text-slate-500 mb-1">
+                  ※ この番号宛の <b>過去{historyNote}日間</b>の履歴を表示しています。
+                </p>
+              )}
+              <div className="bg-slate-50 border border-slate-200 rounded-md min-h-[10rem] max-h-[20rem] overflow-y-auto">
                 {isFetchingHistory ? (
-                  <div className="flex items-center text-slate-500 text-sm">
+                  <div className="flex items-center justify-center h-full text-slate-500 text-sm p-4">
                     <svg className="animate-spin mr-2 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                     <span>検索中...</span>
                   </div>
-                ) : lastHistory ? (
-                  <div className="text-sm space-y-2 animate-fade-in-up">
-                    <p className="text-xs text-slate-500">
-                      {new Date(lastHistory.timestamp).toLocaleString('ja-JP')} / 担当: {lastHistory.operator}
-                    </p>
-                    <p className="text-slate-800 whitespace-pre-wrap break-words max-h-48 overflow-auto bg-white p-3 rounded-md border border-slate-200">
-                      {lastHistory.message}
-                    </p>
-                  </div>
+                ) : historyList.length > 0 ? (
+                  <ul className="space-y-2 p-3">
+                    {historyList.map((entry, index) => (
+                      <li key={index} className="text-sm p-3 bg-white rounded-md border border-slate-200 animate-fade-in-up">
+                        <p className="text-xs text-slate-500 mb-1">
+                          {new Date(entry.timestamp).toLocaleString('ja-JP')} / 担当: {entry.operator || '（不明）'}
+                        </p>
+                        <p className="text-slate-800 whitespace-pre-wrap break-words">
+                          {entry.message}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
                 ) : cleanPhoneNumber(formData.phoneNumber).length >= 10 ? (
-                    <p className="text-slate-500 text-sm">前回送信は見つかりません。</p>
+                    <p className="text-slate-500 text-sm p-4 text-center">この番号への送信履歴はありません。</p>
                 ) : (
-                    <p className="text-slate-400 text-sm">電話番号を入力すると、前回送信内容を検索します。</p>
+                    <p className="text-slate-400 text-sm p-4 text-center">電話番号を入力すると、送信履歴を検索します。</p>
                 )}
               </div>
             </div>
